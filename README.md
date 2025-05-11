@@ -4,7 +4,7 @@
 
 
 ```shell
-python -m pip install git+https://github.com/Lightbridge-KS/lbpy
+pip install git+https://github.com/Lightbridge-KS/lbpy
 ```
 
 Or with `uv`:
