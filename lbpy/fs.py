@@ -46,6 +46,84 @@ def read_text(path, encoding="utf-8"):
         raise
 
 
+def read_text_dir(
+    path,
+    recurse: bool = True,
+    pattern: str = "*",
+    case_sensitive: bool | None = None,
+    encoding: str = "utf-8",
+):
+    """Read all text files in a directory and return their contents in a dictionary.
+
+    Parameters
+    ----------
+    path : str or Path
+        The directory path to read text files from.
+    recurse : bool, default=True
+        If True, recursively search subdirectories for matching files.
+    pattern : str, default="*"
+        The glob pattern to match filenames against.
+    case_sensitive : bool or None, default=None
+        Whether the pattern matching should be case-sensitive.
+        If None, follows the system default behavior.
+    encoding : str, default="utf-8"
+        The character encoding to use when reading files.
+
+    Returns
+    -------
+    dict
+        A dictionary with filenames as keys and file contents as values.
+        The dictionary is sorted alphabetically by filename.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified directory path does not exist.
+    NotADirectoryError
+        If the specified path is not a directory.
+
+    Examples
+    --------
+    ```python
+    # Read all text files in a directory
+    files_content = read_text_dir("/path/to/directory")
+
+    # Read only .txt files in the current directory, not recursively
+    txt_files = read_text_dir(".", recurse=False, pattern="*.txt")
+    ```
+    """
+    path = Path(path)
+    # Validate that the path exists and is a directory
+    if not path.exists():
+        raise FileNotFoundError(f"The path does not exist: '{path}'")
+    if not path.is_dir():
+        raise NotADirectoryError(f"The path is not a directory: '{path}'")
+
+    # Get mapping of pattern
+    if recurse:
+        path_map = path.rglob(pattern, case_sensitive=case_sensitive)
+    else:
+        path_map = path.glob(pattern, case_sensitive=case_sensitive)
+
+    # Get the list of path that is files and not dotfile
+    path_list = [f for f in path_map if f.is_file() and not f.name.startswith(".")]
+    path_name_list = [f.name for f in path_list]
+
+    # Read files in to dictionary where keys are filenames
+    content_dict = {}
+
+    for path_name, path in zip(path_name_list, path_list):
+        try:
+            content_dict[path_name] = read_text(path, encoding=encoding)
+        except Exception as e:
+            print(f"Error reading file: '{path_name}'\n {e}")
+            continue
+    # Sort by filename
+    content_dict_sorted = dict(sorted(content_dict.items()))
+
+    return content_dict_sorted
+
+
 def write_text(text, path, encoding="utf-8", recurse=False, append=False):
     """Write a text string to a text file.
 
