@@ -1,8 +1,17 @@
-import os
 from pathlib import Path
+import pickle
 
 
-def read_text(path, encoding="utf-8"):
+def list_dir(directory, recurse=False, pattern: str = "*") -> list[Path]:
+    """List content in a directory"""
+    path = Path(directory)
+    if recurse:
+        return list(path.rglob(pattern))
+    else:
+        return list(path.glob(pattern))
+
+
+def read_text(path, encoding="utf-8") -> str | None:
     """Read a text file and return its content as a string.
 
     Parameters
@@ -163,6 +172,93 @@ def write_text(text, path, encoding="utf-8", recurse=False, append=False):
                 print(f"Text successfully append to {path}")
             else:
                 print(f"Text successfully written to {path}")
+
+    except (PermissionError, IsADirectoryError):
+        print(f"Cannot write to file: `{path}`")
+    except Exception:
+        raise
+
+
+def read_pickle(path):
+    """Read a Python object from a pickle file.
+
+    Parameters
+    ----------
+    path : str or Path
+        The path to the pickle file to be read.
+
+    Returns
+    -------
+    object
+        The Python object stored in the pickle file if successful.
+    None
+        If the file is not found.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file path does not exist.
+    pickle.UnpicklingError
+        If the pickle file cannot be deserialized.
+    Exception
+        For other possible errors during file reading operations.
+
+    Examples
+    --------
+    ```python
+    data = read_pickle("data.pkl")
+    ```
+    """
+    path = Path(path)
+    try:
+        with open(path, "rb") as file:  # 'rb' for read binary mode
+            return pickle.load(file)
+    except FileNotFoundError:
+        print(f"File was not found: `{path}`")
+    except Exception:
+        raise
+
+
+def write_pickle(object, path, recurse=False):
+    """Write a Python object to a pickle file.
+
+    Parameters
+    ----------
+    object : object
+        The Python object to be serialized and saved.
+    path : str or Path
+        The path to the pickle file to be written.
+    recurse : bool, default=False
+        If True, create parent directories if they don't exist.
+
+    Raises
+    ------
+    PermissionError
+        If the process lacks permission to write to the file.
+    IsADirectoryError
+        If the specified path is a directory, not a file.
+    pickle.PicklingError
+        If the object cannot be serialized.
+    Exception
+        For other possible errors during file writing operations.
+
+    Examples
+    --------
+    ```python
+    data = {"key": "value", "numbers": [1, 2, 3]}
+    write_pickle(data, "data.pkl")
+    write_pickle(data, "/new/path/data.pkl", recurse=True)
+    ```
+    """
+    path = Path(path)
+    try:
+        # Create intermediate directories if they don't exist
+        if recurse and not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            print(f"Created intermediate dir: {path.parent}")
+
+        with open(path, "wb") as file:  # 'wb' for write binary mode
+            pickle.dump(object, file)
 
     except (PermissionError, IsADirectoryError):
         print(f"Cannot write to file: `{path}`")
